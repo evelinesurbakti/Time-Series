@@ -1,0 +1,246 @@
+---
+title: "Time Series 3"
+author: "Eveline Surbakti"
+date: "11/9/2019"
+output:
+  html_document:
+    df_print: paged
+---
+```{r }
+Data_Full = read.csv("assignment3.csv", header = TRUE);
+library(ggplot2);
+library(forecast);
+require(lmtest);
+require(TSA);
+```
+
+## Exercise 1
+a) For Series X, identify the number of differences (if any) and order of the ARMA model for the stationary series based on the results of tsdisplay(). Give reasons for your answers.
+
+```{r }
+#I take series X and plot them
+tsdisplay(Data_Full[,1])
+```
+
+**Answer**
+Based on the data, the ACF plot of X seems to be linear, there might be a difference or a trend within X time series. So, the data need to be differentiated to get the best model.
+
+```{r }
+series1diff = diff(Data_Full[,1], lag=1)
+tsdisplay(series1diff)
+```
+
+Now after the differentiation, the series looks like white noise. It can be used to construct the model. In ACF plot, the value is zero after lag 1 and PACF tails off toward zero. The conditions support the ARMA(0,1) model.
+
+b) For Series Y, identify the number of differences (if any) and order of the ARMA model for the stationary series based on the results of tsdisplay(). Give reasons for your answers.
+
+```{r }
+tsdisplay(Data_Full[,2])
+```
+
+**Answer**
+Based on the data, the ACF plot of X tails off to zero and in PACF plot, the value is zero after lag 2. The conditions support the ARMA(2,0) model.
+
+c) Report the AR and / or MA parameter estimates for Series X and Y, with no 
+drift by using include.mean=FALSE. Are they statistically significant?
+
+**Answer**
+**1) Series X**
+Here is the statistical test of MA(1) for X time series.
+```{r }
+data_3= read.csv("assignment3.csv",header = TRUE);
+model_4x = arima(data_3$X, order=c(0,0,1),include.mean = FALSE)
+coeftest(model_4x)
+
+```
+
+Yes, it is significant for MA(1) to model X series.
+
+**Answer**
+**2) Series Y**
+Here is the statistical test of AR(2) for Y time series.
+
+```{r}
+#AR(2)
+model_3y = arima(data_3$Y, order=c(2,0,0),include.mean = FALSE)
+coeftest(model_3y)
+
+```
+
+Yes, it is significant for MA(1) to model X series.
+
+d) Look at Series Z. What type of model should you choose and why? 
+Again, focus on models without drift (i.e. mean zero).
+
+```{r}
+tsdisplay(Data_Full[,3])
+```
+
+**Answer**
+Based on the time series analysis output, the acf and pacf are tailing off to zero.
+ARMA(1,1) seems to fit Z series.
+
+e) Now try ARMA(1,1), ARMA(1,2) and ARMA(2,1) models fit to Series Z. 
+Do the parameters come out to be statistically significant? Why?
+
+**Answer**
+```{r}
+model_8 = arima(data_3$Z, order=c(1,0,1), include.mean = FALSE)
+coeftest(model_8)
+```
+
+For ARMA(1,1), both parameters are significant.
+
+```{r}
+model_9 = arima(data_3$Z, order=c(1,0,2), include.mean = FALSE)
+coeftest(model_9)
+```
+
+For ARMA(1,2), not all parameters are significant, especially ma2.
+This might be happened because the parameter MA is overestimate. 
+
+```{r}
+model_10 = arima(data_3$Z, order=c(2,0,1), include.mean = FALSE)
+coeftest(model_10)
+
+```
+
+For ARMA(2,1), not all parameters are significant, especially ar2.
+This might be happened because the parameter AR is overestimate. 
+
+# Exercise 2
+1) Examine the residuals of an ARMA(1,1) model fit to Series Z and describe what you find.
+**Answer**
+```{r fig.height = 4, fig.width = 15, fig.align = "center"}
+model_z1=arima(data_3$Z,order=c(1,0,1),include.mean=FALSE)
+plot(residuals(model_z1))
+```
+
+The plot looks like a white noise.
+
+```{r fig.height = 3, fig.width = 3, fig.align = "center"}
+qqnorm(residuals(model_z1))
+qqline(residuals(model_z1))
+```
+
+Q-Q Plot looks normally distributed.
+
+```{r}
+shapiro.test(residuals(model_z1))
+```
+
+The null-hypothesis of this test is that the population is normally distributed. 
+
+Thus, if the p value is less than the chosen alpha level, then the null hypothesis is rejected and there is evidence that the data tested are not normally distributed.
+
+**But in this case, p-value is greater than alpha, means the data is normally distributed.**
+
+```{r}
+acf(residuals(model_z1))
+```
+
+The ACF plot shows that the values are closer to zero.
+
+```{r}
+pacf(residuals(model_z1))
+```
+
+The PACF plot also shows that the values are closer to zero.
+
+```{r}
+Box.test(residuals(model_z1),type = "Ljung-Box",lag = 12,fitdf = 2)
+```
+
+The Ljung-Box Q (LBQ) statistic tests the null hypothesis that the model does not exhibit lack of fit. And based on the p-value that is more than 5%, the model is good. It does not lack of fit. 
+
+2) Examine the residuals of an AR(2) model fit to Series Z and describe what you find.
+
+```{r}
+model_z2=arima(data_3$Z,order=c(2,0,0),include.mean=FALSE)
+plot(residuals(model_z2))
+```
+
+The plot looks like a white noise.
+
+```{r}
+qqnorm(residuals(model_z2))
+qqline(residuals(model_z2))
+```
+
+Q-Q Plot looks normally distributed.
+
+```{r}
+shapiro.test(residuals(model_z2))
+```
+
+And the p-value is greater than alpha, means the data is normally distributed.
+
+```{r}
+acf(residuals(model_z2))
+```
+
+But, The ACF plot shows that a few values is greater than zero, means there is something that need to be examined within the data.
+
+```{r}
+pacf(residuals(model_z2))
+```
+
+Same thing happen to PACF plots, some values are greater than zero. Next step will give more information about the model. 
+
+```{r}
+Box.test(residuals(model_z2),type = "Ljung-Box",lag = 12,fitdf = 2)
+```
+
+The Ljung-Box Q (LBQ) statistic tests the null hypothesis that the model does not exhibit lack of fit. And based on the p-value that is less than 5%, we can say that the model is quite lack of fit. 
+
+# Exercise 3
+Now fit an AR(10) model to Series Z.
+a)Are the parameters significant? Examine the residuals and describe your findings
+
+**Answer**
+```{r}
+model_6_1=arima(data_3$Z,order=c(10,0,0),include.mean=FALSE)
+plot(residuals(model_6_1))
+```
+
+The plot looks like a white noise.
+
+```{r}
+qqnorm(residuals(model_6_1))
+qqline(residuals(model_6_1))
+```
+
+Q-Q Plot looks normally distributed.
+
+```{r}
+shapiro.test(residuals(model_6_1))
+```
+
+The p-value is greater than alpha, means the data is normally distributed.
+
+```{r}
+acf(residuals(model_6_1))
+```
+
+The ACF plot shows that the values are closer to zero.
+
+```{r}
+pacf(residuals(model_6_1))
+```
+
+The PACF plot also shows that the values are closer to zero.
+
+```{r}
+Box.test(residuals(model_6_1),type = "Ljung-Box",lag = 20,fitdf = 10)
+```
+
+The Ljung-Box Q (LBQ) statistic tests the null hypothesis that the model does not exhibit lack of fit. And based on the p-value that is more than 5%, the model is good. It does not lack of fit. 
+
+b)Why might this model fit the Series well? 
+
+**Answer**
+
+
+```{r}
+coeftest(model_6_1)
+```
